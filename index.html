@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>학생 택시 카풀 수요 조사</title>
+    <!-- 모바일 홈 화면 추가를 위한 설정 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="택시 카풀">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #1e293b;
+            --border-color: #e2e8f0;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-color); display: flex; justify-content: center; padding: 12px; min-height: 100vh; }
+        .app-container { width: 100%; max-width: 480px; background: var(--card-bg); border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); padding: 20px; margin-bottom: 20px; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h1 { font-size: 22px; color: var(--primary-color); margin-bottom: 6px; }
+        .header p { font-size: 13px; color: #64748b; }
+        .tabs { display: flex; background: #f1f5f9; border-radius: 12px; padding: 4px; margin-bottom: 20px; }
+        .tab { flex: 1; text-align: center; padding: 10px; font-size: 14px; font-weight: 600; cursor: pointer; border-radius: 8px; transition: 0.2s; color: #64748b; }
+        .tab.active { background: white; color: var(--primary-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #475569; }
+        .form-control { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 10px; font-size: 15px; outline: none; background: #f8fafc; }
+        .form-control:focus { border-color: var(--primary-color); background: white; }
+        .btn-submit { width: 100%; padding: 14px; background: var(--primary-color); color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 10px; }
+        .btn-submit:active { background: var(--primary-hover); }
+        .section-title { font-size: 16px; font-weight: 700; margin-bottom: 12px; color: #334155; display: flex; justify-content: space-between; align-items: center; }
+        .badge { background: #e0e7ff; color: #4338ca; font-size: 12px; padding: 4px 8px; border-radius: 12px; }
+        
+        /* 모아보기 카드 스타일 */
+        .group-card { background: white; border: 1px solid var(--border-color); border-radius: 16px; padding: 16px; margin-bottom: 14px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+        .group-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+        .group-title { font-size: 16px; font-weight: 700; color: #1e293b; }
+        .group-time { font-size: 13px; color: #2563eb; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 4px; }
+        .member-list { background: #f8fafc; border-radius: 10px; padding: 10px 12px; margin-top: 8px; }
+        .member-item { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #334155; padding: 4px 0; }
+        .member-item:not(:last-child) { border-bottom: 1px dashed #e2e8f0; }
+        .count-tag { font-size: 12px; font-weight: 700; background: #dbeafe; color: #1e40af; padding: 4px 8px; border-radius: 20px; }
+        
+        .btn-delete { color: #ef4444; background: none; border: none; font-size: 14px; cursor: pointer; padding: 2px 6px; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <h1>택시 카풀 수요조사</h1>
+            <p>안전하고 편리한 귀가/외출을 위한 학생 자치 공약</p>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('apply')">학생 신청하기</div>
+            <div class="tab" onclick="switchTab('admin')">카풀 매칭 보드</div>
+        </div>
+
+        <!-- 학생 신청 화면 -->
+        <div id="apply-tab" class="tab-content active">
+            <form id="carpoolForm">
+                <div class="form-group">
+                    <label>이름 및 학번 (예: 2616 이지한)</label>
+                    <input type="text" class="form-control" id="studentName" placeholder="예: 2616 이지한" required>
+                </div>
+                <div class="form-group">
+                    <label>목적지 선택</label>
+                    <select class="form-control" id="destination" required>
+                        <option value="" disabled selected>목적지를 선택하세요</option>
+                        <option value="LH 본사">LH 본사</option>
+                        <option value="진주 고속버스터미널">진주 고속버스터미널</option>
+                        <option value="진주 시외버스터미널">진주 시외버스터미널</option>
+                        <option value="진주역">진주역</option>
+                        <option value="경상국립대학교">경상국립대학교</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>이용 날짜 선택</label>
+                    <input type="date" class="form-control" id="dateSelect" onchange="checkDayOfWeek()" required>
+                </div>
+                <div class="form-group">
+                    <label>요일 선택 (금/토/일 가능)</label>
+                    <select class="form-control" id="daySelect" onchange="updateTimeOptions()" required>
+                        <option value="" disabled selected>날짜를 먼저 선택하세요</option>
+                        <option value="금요일">금요일</option>
+                        <option value="토요일">토요일</option>
+                        <option value="일요일">일요일</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>시간대 선택</label>
+                    <select class="form-control" id="timeSelect" required>
+                        <option value="" disabled selected>먼저 요일을 선택해주세요</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-submit">카풀 수요 신청하기</button>
+            </form>
+        </div>
+
+        <!-- 카풀 매칭 보드 화면 -->
+        <div id="admin-tab" class="tab-content">
+            <div class="section-title">
+                <span>매칭 그룹 현황</span>
+                <span class="badge" id="totalCount">총 0건</span>
+            </div>
+            <div id="requestList">
+                <!-- 같은 목적지/시간별로 모아진 그룹 목록이 여기에 표시됩니다 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 날짜 선택 시 요일 자동 감지
+        function checkDayOfWeek() {
+            const dateVal = document.getElementById('dateSelect').value;
+            if (!dateVal) return;
+            
+            const dateObj = new Date(dateVal);
+            const dayIndex = dateObj.getDay(); // 0: 일, 1: 월, ..., 5: 금, 6: 토
+            const daySelect = document.getElementById('daySelect');
+
+            if (dayIndex === 5) {
+                daySelect.value = '금요일';
+            } else if (dayIndex === 6) {
+                daySelect.value = '토요일';
+            } else if (dayIndex === 0) {
+                daySelect.value = '일요일';
+            } else {
+                alert('금요일, 토요일, 일요일 중에서만 선택해 주세요!');
+                document.getElementById('dateSelect').value = '';
+                daySelect.value = '';
+                return;
+            }
+            updateTimeOptions();
+        }
+
+        // 시간대 옵션 생성 함수
+        function updateTimeOptions() {
+            const day = document.getElementById('daySelect').value;
+            const timeSelect = document.getElementById('timeSelect');
+            timeSelect.innerHTML = '<option value="" disabled selected>시간을 선택하세요</option>';
+
+            let startHour = 7, endHour = 20;
+            if (day === '금요일') {
+                startHour = 15;
+            }
+
+            for (let h = startHour; h <= endHour; h++) {
+                for (let m of ['00', '30']) {
+                    if (day === '금요일' && h === 15 && m === '00') continue;
+                    if (h === 20 && m === '30') continue;
+                    
+                    const timeStr = `${String(h).padStart(2, '0')}:${m}`;
+                    const option = document.createElement('option');
+                    option.value = timeStr;
+                    option.textContent = timeStr;
+                    timeSelect.appendChild(option);
+                }
+            }
+        }
+
+        // 탭 전환
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            if (tabName === 'apply') {
+                document.querySelectorAll('.tab')[0].classList.add('active');
+                document.getElementById('apply-tab').classList.add('active');
+            } else {
+                document.querySelectorAll('.tab')[1].classList.add('active');
+                document.getElementById('admin-tab').classList.add('active');
+                renderList();
+            }
+        }
+
+        // 데이터 저장 및 불러오기
+        function getRequests() {
+            return JSON.parse(localStorage.getItem('carpoolRequests') || '[]');
+        }
+
+        function saveRequests(requests) {
+            localStorage.setItem('carpoolRequests', JSON.stringify(requests));
+        }
+
+        // 폼 제출 이벤트
+        document.getElementById('carpoolForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const newRequest = {
+                id: Date.now(),
+                name: document.getElementById('studentName').value,
+                destination: document.getElementById('destination').value,
+                date: document.getElementById('dateSelect').value,
+                day: document.getElementById('daySelect').value,
+                time: document.getElementById('timeSelect').value
+            };
+
+            const requests = getRequests();
+            requests.push(newRequest);
+            saveRequests(requests);
+
+            alert('카풀 신청이 완료되었습니다!');
+            document.getElementById('carpoolForm').reset();
+            switchTab('admin');
+        });
+
+        // 개별 신청 삭제
+        function deleteRequest(id) {
+            if (confirm('이 신청 항목을 삭제하시겠습니까?')) {
+                let requests = getRequests();
+                requests = requests.filter(r => r.id !== id);
+                saveRequests(requests);
+                renderList();
+            }
+        }
+
+        // 목적지/날짜/시간별 그룹화 렌더링
+        function renderList() {
+            const requests = getRequests();
+            const listContainer = document.getElementById('requestList');
+            document.getElementById('totalCount').textContent = `총 ${requests.length}명 신청`;
+
+            if (requests.length === 0) {
+                listContainer.innerHTML = '<p style="text-align:center; color:#94a3b8; padding:20px;">등록된 카풀 신청이 없습니다.</p>';
+                return;
+            }
+
+            // 목적지+날짜+시간 키로 그룹화
+            const groups = {};
+            requests.forEach(r => {
+                const groupKey = `${r.destination}_${r.date}_${r.time}`;
+                if (!groups[groupKey]) {
+                    groups[groupKey] = {
+                        destination: r.destination,
+                        date: r.date,
+                        day: r.day,
+                        time: r.time,
+                        members: []
+                    };
+                }
+                groups[groupKey].members.push(r);
+            });
+
+            // HTML 생성
+            let html = '';
+            Object.values(groups).forEach(g => {
+                html += `
+                    <div class="group-card">
+                        <div class="group-header">
+                            <div class="group-title">${g.destination}</div>
+                            <span class="count-tag"><i class="fa-solid fa-user-group"></i> ${g.members.length}명 참여 중</span>
+                        </div>
+                        <div class="group-time">
+                            <i class="fa-regular fa-calendar"></i> ${g.date} (${g.day}) ${g.time}
+                        </div>
+                        <div class="member-list">
+                            ${g.members.map(m => `
+                                <div class="member-item">
+                                    <span><i class="fa-solid fa-user" style="color:#94a3b8; margin-right:6px;"></i>${m.name}</span>
+                                    <button class="btn-delete" onclick="deleteRequest(${m.id})">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+
+            listContainer.innerHTML =
