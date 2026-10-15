@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>학생 택시 카풀 수요 조사</title>
+    <!-- 모바일 홈 화면 추가를 위한 설정 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="카풀신청">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #1e293b;
+            --border-color: #e2e8f0;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-color); line-height: 1.6; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: var(--card-bg); padding: 24px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        h1 { font-size: 1.5rem; text-align: center; margin-bottom: 8px; color: var(--primary-color); }
+        .subtitle { text-align: center; font-size: 0.9rem; color: #64748b; margin-bottom: 24px; }
+        
+        .tabs { display: flex; border-bottom: 2px solid var(--border-color); margin-bottom: 20px; }
+        .tab { flex: 1; text-align: center; padding: 12px; font-weight: bold; cursor: pointer; color: #64748b; border-bottom: 2px solid transparent; margin-bottom: -2px; }
+        .tab.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
+
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.95rem; }
+        input, select { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; outline: none; transition: border-color 0.2s; }
+        input:focus, select:focus { border-color: var(--primary-color); }
+        
+        button { width: 100%; background-color: var(--primary-color); color: white; border: none; padding: 14px; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: background-color 0.2s; margin-top: 10px; }
+        button:hover { background-color: var(--primary-hover); }
+
+        .admin-section { display: none; }
+        .admin-section.active { display: block; }
+        .user-section.active { display: block; }
+        .user-section { display: none; }
+
+        .filter-box { display: flex; gap: 10px; margin-bottom: 16px; }
+        .result-card { background: #f1f5f9; border-radius: 8px; padding: 14px; margin-bottom: 12px; border-left: 4px solid var(--primary-color); }
+        .result-card h3 { font-size: 1rem; margin-bottom: 6px; display: flex; justify-content: space-between; }
+        .result-card p { font-size: 0.9rem; color: #475569; }
+        .delete-btn { background: #ef4444; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; cursor: pointer; margin-top: 6px; }
+        .delete-btn:hover { background: #dc2626; }
+        
+        .empty-msg { text-align: center; color: #94a3b8; padding: 40px 0; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>택시 카풀 수요조사</h1>
+    <p class="subtitle">안전하고 편리한 귀가/외출을 위한 학생 자치 공약</p>
+
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('user')">학생 신청하기</div>
+        <div class="tab" onclick="switchTab('admin')">부회장 관리자 화면</div>
+    </div>
+
+    <!-- 학생 신청 폼 -->
+    <div id="userSection" class="user-section active">
+        <form id="carpoolForm">
+            <div class="form-group">
+                <label for="studentName">이름 및 학번 (예: 2반 김철수)</label>
+                <input type="text" id="studentName" required placeholder="이름과 학번을 입력하세요">
+            </div>
+
+            <div class="form-group">
+                <label for="destination">목적지 선택</label>
+                <select id="destination" required>
+                    <option value="">목적지를 선택하세요</option>
+                    <option value="LH 본사">LH 본사</option>
+                    <option value="진주고속버스터미널">진주고속버스터미널</option>
+                    <option value="진주시외버스터미널">진주시외버스터미널</option>
+                    <option value="진주역">진주역</option>
+                    <option value="경상대">경상대</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="dayOfWeek">요일 선택 (외박 가능 요일)</label>
+                <select id="dayOfWeek" required onchange="updateTimeSlots()">
+                    <option value="">요일을 선택하세요</option>
+                    <option value="금요일">금요일 (외출 가능)</option>
+                    <option value="토요일">토요일</option>
+                    <option value="일요일">일요일</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="timeSlot">시간대 선택</label>
+                <select id="timeSlot" required>
+                    <option value="">먼저 요일을 선택해주세요</option>
+                </select>
+            </div>
+
+            <button type="submit">카풀 수요 신청하기</button>
+        </form>
+    </div>
+
+    <!-- 관리자(부회장) 확인 화면 -->
+    <div id="adminSection" class="admin-section">
+        <div class="filter-box">
+            <select id="filterDest" onchange="renderResults()">
+                <option value="">전체 목적지 보기</option>
+                <option value="LH 본사">LH 본사</option>
+                <option value="진주고속버스터미널">진주고속버스터미널</option>
+                <option value="진주시외버스터미널">진주시외버스터미널</option>
+                <option value="진주역">진주역</option>
+                <option value="경상대">경상대</option>
+            </select>
+            <select id="filterDay" onchange="renderResults()">
+                <option value="">전체 요일 보기</option>
+                <option value="금요일">금요일</option>
+                <option value="토요일">토요일</option>
+                <option value="일요일">일요일</option>
+            </select>
+        </div>
+
+        <div id="resultList">
+            <!-- 신청 결과들이 여기에 동적으로 표시됩니다 -->
+        </div>
+        <button onclick="clearAllData()" style="background-color: #64748b; margin-top: 20px;">모든 데이터 초기화</button>
+    </div>
+</div>
+
+<script>
+    // 탭 전환 함수
+    function switchTab(type) {
+        const userSec = document.getElementById('userSection');
+        const adminSec = document.getElementById('adminSection');
+        const tabs = document.querySelectorAll('.tab');
+
+        if(type === 'user') {
+            userSec.classList.add('active');
+            adminSec.classList.remove('active');
+            tabs[0].classList.add('active');
+            tabs[1].classList.remove('active');
+        } else {
+            userSec.classList.remove('active');
+            adminSec.classList.add('active');
+            tabs[0].classList.remove('active');
+            tabs[1].classList.add('active');
+            renderResults();
+        }
+    }
+
+    // 요일별 시간대 자동 생성 함수
+    function updateTimeSlots() {
+        const day = document.getElementById('dayOfWeek').value;
+        const timeSelect = document.getElementById('timeSlot');
+        timeSelect.innerHTML = '<option value="">시간대를 선택하세요</option>';
+
+        if (!day) return;
+
+        let startHour = 7;
+        let startMin = 0;
+        let endHour = 20;
+        let endMin = 0;
+
+        // 금요일은 15시 30분부터 가능
+        if (day === '금요일') {
+            startHour = 15;
+            startMin = 30;
+        }
+
+        let currentH = startHour;
+        let currentM = startMin;
+
+        while (currentH < endHour || (currentH === endHour && currentM <= endMin)) {
+            let hStr = String(currentH).padStart(2, '0');
+            let mStr = String(currentM).padStart(2, '0');
+            let timeString = `${hStr}:${mStr}`;
+
+            let option = document.createElement('option');
+            option.value = timeString;
+            option.textContent = timeString;
+            timeSelect.appendChild(option);
+
+            // 30분씩 증가
+            currentM += 30;
+            if (currentM >= 60) {
+                currentH += 1;
+                currentM = 0;
+            }
+        }
+    }
+
+    // 신청 데이터 저장
+    document.getElementById('carpoolForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const name = document.getElementById('studentName').value.trim();
+        const destination = document.getElementById('destination').value;
+        const day = document.getElementById('dayOfWeek').value;
+        const time = document.getElementById('timeSlot').value;
+
+        const newEntry = {
+            id: Date.now(),
+            name,
+            destination,
+            day,
+            time
+        };
+
+        let applications = JSON.parse(localStorage.getItem('carpoolApps')) || [];
+        applications.push(newEntry);
+        localStorage.setItem('carpoolApps', JSON.stringify(applications));
+
+        alert('카풀 수요가 성공적으로 신청되었습니다!');
+        document.getElementById('carpoolForm').reset();
+        document.getElementById('timeSlot').innerHTML = '<option value="">먼저 요일을 선택해주세요</option>';
+    });
+
+    // 관리자 화면 결과 렌더링
+    function renderResults() {
+        const resultList = document.getElementById('resultList');
+        const filterDest = document.getElementById('filterDest').value;
+        const filterDay = document.getElementById('filterDay').value;
+
+        let applications = JSON.parse(localStorage.getItem('carpoolApps')) || [];
+
+        // 필터링 적용
+        let filtered = applications.filter(item => {
+            let matchDest = filterDest ? item.destination === filterDest : true;
+            let matchDay = filterDay ? item.day === filterDay : true;
+            return matchDest && matchDay;
+        });
+
+        if (filtered.length === 0) {
+            resultList.innerHTML = '<div class="empty-msg">신청 내역이 없습니다.</div>';
+            return;
+        }
+
+        // 목적지 및 시간대별로 그룹화하면 한눈에 보기 편함
+        let html = '';
+        
+        // 보기 쉽게 목적지/시간 순으로 정렬
+        filtered.sort((a, b) => {
+            if (a.destination !== b.destination) return a.destination.localeCompare(b.destination);
+            if (a.day !== b.day) return a.day.localeCompare(b.day);
+            return a.time.localeCompare(b.time);
+        });
+
+        filtered.forEach(item => {
+            html += `
+                <div class="result-card">
+                    <h3>
+                        <span>📍 ${item.destination} (${item.day} ${item.time})</span>
+                    </h3>
+                    <p><strong>신청 학생:</strong> ${item.name}</p>
+                    <button class="delete-btn" onclick="deleteEntry(${item.id})">삭제</button>
+                </div>
+            `;
+        });
+
+        resultList.innerHTML = html;
+    }
+
+    // 개별 삭제
+    function deleteEntry(id) {
+        if(confirm('이 신청 내역을 삭제하시겠습니까?')) {
+            let applications = JSON.parse(localStorage.getItem('carpoolApps')) || [];
+            applications = applications.filter(item => item.id !== id);
+            localStorage.setItem('carpoolApps', JSON.stringify(applications));
+            renderResults();
+        }
+    }
+
+    // 전체 초기화
+    function clearAllData() {
+        if(confirm('정말 모든 신청 데이터를 초기화하시겠습니까?')) {
+            localStorage.removeItem('carpoolApps');
+            renderResults();
+        }
+    }
+</script>
+
+</body>
+</html>
